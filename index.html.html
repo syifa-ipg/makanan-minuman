@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>المأكولات والمشروبات - لُعْبَةُ الْكِتَابَةِ الْعَرَبِيَّةِ</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Readex Pro & Cairo untuk tulisan Arab yang jelas dan ceria -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;900&family=Readex+Pro:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- MediaPipe Hands & Camera Utils CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Readex Pro', 'Cairo', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            background-color: #0f172a;
+        }
+
+        .font-arab {
+            font-family: 'Readex Pro', 'Cairo', sans-serif;
+        }
+
+        /* Animasi Pop-up Kad */
+        @keyframes popBounce {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.06); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-pop {
+            animation: popBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Animasi Denyutan Butang */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.65); }
+            50% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+        }
+
+        .btn-glow {
+            animation: pulseGlow 2s infinite;
+        }
+
+        /* Kesan Hover Jari Maya (Virtual Finger Hover) */
+        .virtual-btn {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .virtual-btn.hovered {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.9);
+            border-color: #facc15 !important;
+        }
+
+        .virtual-btn .dwell-fill {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            height: 100%;
+            width: 0%;
+            background: rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+            transition: width 0.05s linear;
+        }
+
+        /* Latar Belakang Skrin Utama Gelap Moden */
+        .home-dark-bg {
+            background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 65%, #020617 100%);
+        }
+
+        /* Scrollbar halus */
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen relative flex flex-col justify-between text-white">
+
+    <!-- Elemen Video Tersembunyi untuk Webcam -->
+    <video id="webcamVideo" class="hidden" playsinline></video>
+
+    <!-- Kanvas Utama (Video Webcam Mirrored + Tulisan Dakwat + Kursor Jari + Konfeti) -->
+    <canvas id="gameCanvas" class="absolute inset-0 w-full h-full object-cover z-0"></canvas>
+
+    <!-- ===================================================================== -->
+    <!-- BAHAGIAN ATAS: Bar Navigasi + Kad Gambar Soalan (Susun Atur Kemas)    -->
+    <!-- ===================================================================== -->
+    <div class="relative z-20 w-full flex flex-col items-center pointer-events-none">
+        
+        <!-- Bar Navigasi Atas -->
+        <header class="w-full p-2 sm:p-3 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-b from-slate-950/90 via-slate-900/70 to-transparent pointer-events-auto">
+            
+            <!-- Kanan: Butang Utama, Tajuk & Skor -->
+            <div class="flex items-center gap-2">
+                <button id="backToHomeBtn" class="virtual-btn bg-slate-800/95 hover:bg-slate-700 text-white px-3 py-2 rounded-2xl border-2 border-slate-500 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-1.5 cursor-pointer">
+                    <div class="dwell-fill"></div>
+                    <span>🏠</span>
+                    <span>الرَّئِيسِيَّةُ</span>
+                </button>
+
+                <div class="bg-gradient-to-l from-amber-400 to-orange-500 text-slate-950 px-3 sm:px-4 py-1.5 rounded-2xl shadow-lg border-2 border-white">
+                    <h1 class="font-arab font-black text-base sm:text-xl leading-tight">المأكولات والمشروبات</h1>
+                </div>
+
+                <div class="bg-slate-800/95 border-2 border-emerald-400 px-3 py-1.5 rounded-2xl flex items-center gap-2 shadow-lg">
+                    <span class="text-lg sm:text-xl">⭐</span>
+                    <div>
+                        <div class="text-[10px] text-emerald-300 font-bold">النِّقَاطُ</div>
+                        <div id="scoreDisplay" class="text-base sm:text-lg font-black leading-none text-white">٠</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tengah: Kawalan Muzik, Baris & Senarai Soalan -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button id="toggleMusicBtn" class="virtual-btn bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-2xl border-2 border-pink-300 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-1.5 cursor-pointer">
+                    <div class="dwell-fill"></div>
+                    <span id="musicIcon">🎵</span>
+                    <span id="musicLabel" class="hidden md:inline">الْمُوسِيقَى: تَشْغِيل</span>
+                </button>
+
+                <button id="toggleHarakatBtn" class="virtual-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-2xl border-2 border-amber-300 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-1.5 cursor-pointer">
+                    <div class="dwell-fill"></div>
+                    <span>🔤</span>
+                    <span id="harakatLabel" class="hidden md:inline">التَّشْكِيلُ: نَعَمْ</span>
+                </button>
+
+                <button id="openWordListBtn" class="virtual-btn bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-2xl border-2 border-purple-300 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-1.5 cursor-pointer">
+                    <div class="dwell-fill"></div>
+                    <span>📋</span>
+                    <span id="wordProgressText">١ / ١٧</span>
+                </button>
+            </div>
+
+            <!-- Kiri: Pemilih Warna Dakwat & Status Tangan -->
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 bg-slate-800/90 p-1.5 rounded-2xl border border-white/20 shadow-lg">
+                    <button data-color="#ef4444" class="virtual-btn color-btn w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-500 border-4 border-white shadow-md cursor-pointer">
+                        <div class="dwell-fill"></div>
+                    </button>
+                    <button data-color="#3b82f6" class="virtual-btn color-btn w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-500 border-2 border-white/50 shadow-md cursor-pointer">
+                        <div class="dwell-fill"></div>
+                    </button>
+                    <button data-color="#22c55e" class="virtual-btn color-btn w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-green-500 border-2 border-white/50 shadow-md cursor-pointer">
+                        <div class="dwell-fill"></div>
+                    </button>
+                    <button data-color="#facc15" class="virtual-btn color-btn w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-yellow-400 border-2 border-white/50 shadow-md cursor-pointer">
+                        <div class="dwell-fill"></div>
+                    </button>
+                </div>
+
+                <div id="gestureBadge" class="bg-slate-900/95 border-2 border-slate-500 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2">
+                    <span id="gestureIcon" class="text-xl sm:text-2xl">🖐️</span>
+                    <div id="gestureText" class="text-xs sm:text-sm font-bold text-white">جَاهِزٌ</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Baris Kad Gambar Soalan (Tengah Atas, Di Bawah Bar Navigasi - TIADA PERTINDIHAN) -->
+        <div class="w-full flex flex-col items-center mt-1 sm:mt-2 px-3">
+            <div id="miniReferenceCard" class="hidden pointer-events-auto bg-white p-1.5 rounded-3xl shadow-2xl border-4 border-amber-400 transition-all duration-300">
+                <img id="miniCardImg" src="" alt="" class="w-[125px] h-[125px] sm:w-[140px] sm:h-[140px] rounded-2xl object-contain block">
+            </div>
+
+            <!-- Bar Kemajuan Genggam Tangan untuk Padam -->
+            <div id="fistProgressContainer" class="hidden mt-2 w-48 bg-slate-900/95 p-2 rounded-2xl border-2 border-rose-500 shadow-xl">
+                <div class="text-xs font-bold text-rose-300 text-center mb-1">✊ جَارِي الْمَسْحِ...</div>
+                <div class="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div id="fistProgressBar" class="h-full bg-gradient-to-l from-orange-500 to-rose-500 w-0 transition-all duration-75"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- RUANG MENULIS KOSONG (PURE MEMORY RECALL - GARISAN NIPIS SAHAJA)       -->
+    <!-- ===================================================================== -->
+    <div id="writingAreaOverlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10 transition-opacity duration-300 opacity-0">
+        <div class="relative flex flex-col items-center justify-center w-11/12 max-w-4xl h-56 sm:h-72 mt-32 sm:mt-36 rounded-3xl border-2 border-dashed border-white/25 bg-slate-900/10">
+            <div class="w-11/12 border-b border-dashed border-white/20 mb-14 sm:mb-20"></div>
+            <div class="w-11/12 border-b-2 border-cyan-300/35"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- BAR BAWAH: Panduan Isyarat & Butang Tindakan Maya                     -->
+    <!-- ===================================================================== -->
+    <footer class="relative z-20 w-full p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-t from-slate-950/95 via-slate-900/75 to-transparent">
+        
+        <!-- Panduan Isyarat Ringkas -->
+        <div class="flex items-center gap-2 sm:gap-3 bg-slate-800/90 px-3.5 py-2 rounded-2xl border border-white/15 text-xs sm:text-sm">
+            <div class="flex items-center gap-1 text-emerald-300 font-bold">
+                <span>☝️</span> <span>السَّبَّابَةُ: كِتَابَةٌ</span>
+            </div>
+            <span class="text-white/30">|</span>
+            <div class="flex items-center gap-1 text-sky-300 font-bold">
+                <span>✋</span> <span>كَفٌّ مَفْتُوحَةٌ: رَفْعُ الْقَلَمِ</span>
+            </div>
+            <span class="text-white/30">|</span>
+            <div class="flex items-center gap-1 text-rose-300 font-bold">
+                <span>✊</span> <span>قَبْضَةٌ: مَسْحٌ</span>
+            </div>
+        </div>
+
+        <!-- Butang Tindakan Maya (Padam & Selesai) -->
+        <div class="flex items-center gap-3">
+            <button id="clearCanvasBtn" class="virtual-btn bg-rose-600 hover:bg-rose-500 text-white px-5 py-3 rounded-2xl border-2 border-rose-300 font-bold text-sm sm:text-base shadow-xl flex items-center gap-2 cursor-pointer">
+                <div class="dwell-fill"></div>
+                <span>🗑️</span>
+                <span>مَسْحُ اللَّوْحِ</span>
+            </button>
+
+            <button id="completeWordBtn" class="virtual-btn btn-glow bg-gradient-to-l from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white px-6 sm:px-8 py-3 rounded-2xl border-2 border-white font-black text-base sm:text-lg shadow-2xl flex items-center gap-2 cursor-pointer">
+                <div class="dwell-fill"></div>
+                <span>✅</span>
+                <span>تَمَّ / التَّالِي</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL FASA 1: POP-UP GAMBAR RANGSANGAN AWAL (3 SAAT)                  -->
+    <!-- ===================================================================== -->
+    <div id="stimulusModal" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="animate-pop bg-white text-slate-900 rounded-[2.5rem] max-w-sm w-full p-6 sm:p-7 text-center shadow-2xl border-8 border-amber-400">
+            <div class="inline-block bg-amber-100 text-amber-800 text-xs sm:text-sm font-black px-4 py-1 rounded-full mb-3">
+                السُّؤَالُ <span id="modalQuestionNum">١</span> / ١٧
+            </div>
+
+            <!-- Paparan Gambar Sahaja (Tiada Teks Perkataan) -->
+            <div class="w-48 h-48 sm:w-52 sm:h-52 mx-auto my-2 rounded-3xl overflow-hidden shadow-md">
+                <img id="modalCardImg" src="" alt="" class="w-full h-full object-contain">
+            </div>
+
+            <p class="text-base sm:text-lg font-black text-slate-800 mt-3">
+                تَأَمَّلِ الصُّورَةَ وَاكْتُبِ الْكَلِمَةَ
+            </p>
+
+            <!-- Bar Kemajuan 3 Saat -->
+            <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden my-4">
+                <div id="modalTimerBar" class="h-full bg-gradient-to-l from-amber-400 to-orange-500 w-full transition-all duration-75"></div>
+            </div>
+
+            <button id="startWritingNowBtn" class="w-full bg-gradient-to-l from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-base sm:text-lg py-3.5 px-6 rounded-2xl shadow-lg transition cursor-pointer">
+                ✍️ اِبْدَأِ الْكِتَابَةَ (<span id="countdownSec">٣</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL TAHNIAH & SEMAKAN EJAAN JAWAPAN                                 -->
+    <!-- ===================================================================== -->
+    <div id="celebrationModal" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="animate-pop bg-gradient-to-b from-emerald-500 to-teal-600 text-white rounded-[2.5rem] max-w-md w-full p-6 sm:p-8 text-center shadow-2xl border-8 border-yellow-300">
+            <div class="text-5xl sm:text-6xl mb-2">🌟🎉🌟</div>
+            <h2 class="font-arab text-3xl sm:text-4xl font-black text-yellow-200">مُمْتَازٌ! أَحْسَنْتَ!</h2>
+            <p class="text-sm sm:text-base font-bold text-white/95 mt-1 mb-4">تَحَقَّقْ مِنْ صِحَّةِ الْإِجَابَةِ:</p>
+
+            <div class="bg-white text-slate-900 rounded-3xl p-5 shadow-inner border-4 border-emerald-200 flex flex-col items-center">
+                <img id="celebrationCardImg" src="" alt="" class="w-24 h-24 object-contain mb-2 rounded-xl">
+                <div id="completedArabicWord" class="font-arab text-5xl sm:text-6xl font-black text-emerald-700 leading-relaxed">أَرُزٌّ</div>
+            </div>
+
+            <button id="nextQuestionModalBtn" class="mt-5 w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-lg sm:text-xl py-3.5 px-6 rounded-2xl shadow-xl transition cursor-pointer">
+                السُّؤَالُ التَّالِي ➡️
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL SENARAI 17 KAD GAMBAR SAHAJA (LOMPAT SOALAN)                    -->
+    <!-- ===================================================================== -->
+    <div id="wordListModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-400/50 rounded-3xl max-w-4xl w-full max-h-[88vh] flex flex-col p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 class="text-lg sm:text-xl font-black text-amber-300">قَائِمَةُ الصُّوَرِ (المأكولات والمشروبات)</h3>
+                <button id="closeWordListBtn" class="bg-rose-600 hover:bg-rose-500 text-white w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center cursor-pointer">✕</button>
+            </div>
+            <div id="wordGridContainer" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 overflow-y-auto pt-4 pl-1"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SKRIN UTAMA (PAPARAN GELAP MODEN & KEMAS - 100% BAHASA ARAB)          -->
+    <!-- ===================================================================== -->
+    <div id="startScreenOverlay" class="fixed inset-0 z-50 home-dark-bg flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-white/15 rounded-[2.2rem] max-w-xl w-full p-6 sm:p-8 text-center shadow-2xl my-auto">
+            
+            <!-- Ikon & Tajuk Utama -->
+            <div class="flex items-center justify-center gap-3 text-4xl sm:text-5xl mb-3">
+                <span>🖐️</span><span>✍️</span><span>🍲</span>
+            </div>
+            <h1 class="font-arab text-3xl sm:text-5xl font-black text-amber-300 leading-tight">
+                المأكولات والمشروبات
+            </h1>
+            <p class="text-base sm:text-lg font-bold text-white/90 mt-2 mb-5">
+                لُعْبَةُ الْكِتَابَةِ الْعَرَبِيَّةِ فِي الْهَوَاءِ
+            </p>
+
+            <!-- Pilihan Tetapan التشكيل -->
+            <div class="flex items-center justify-center gap-5 mb-5 bg-slate-800/70 px-4 py-3 rounded-2xl border border-white/10 text-sm">
+                <span class="font-bold text-slate-300">التَّشْكِيلُ فِي التَّصْحِيحِ:</span>
+                <label class="flex items-center gap-2 cursor-pointer font-bold text-amber-300">
+                    <input type="radio" name="harakatChoice" value="with" checked class="accent-amber-400">
+                    <span>مَشْكُولٌ (أَرُزٌّ)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer font-bold text-sky-300">
+                    <input type="radio" name="harakatChoice" value="without" class="accent-sky-400">
+                    <span>بِدُونِ تَشْكِيلٍ (أرز)</span>
+                </label>
+            </div>
+
+            <!-- Panduan 3 Isyarat Tangan dalam Bahasa Arab -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <div class="bg-slate-800/80 border border-emerald-400/35 rounded-2xl p-3.5 flex flex-col items-center text-center">
+                    <span class="text-3xl mb-1.5">☝️</span>
+                    <div class="text-sm font-black text-emerald-300">السَّبَّابَةُ فَقَطْ</div>
+                    <div class="text-xs text-slate-300 mt-1">لِلْكِتَابَةِ</div>
+                </div>
+                <div class="bg-slate-800/80 border border-sky-400/35 rounded-2xl p-3.5 flex flex-col items-center text-center">
+                    <span class="text-3xl mb-1.5">✋</span>
+                    <div class="text-sm font-black text-sky-300">كَفٌّ مَفْتُوحَةٌ</div>
+                    <div class="text-xs text-slate-300 mt-1">لِرَفْعِ الْقَلَمِ</div>
+                </div>
+                <div class="bg-slate-800/80 border border-rose-400/35 rounded-2xl p-3.5 flex flex-col items-center text-center">
+                    <span class="text-3xl mb-1.5">✊</span>
+                    <div class="text-sm font-black text-rose-300">قَبْضَةُ الْيَدِ</div>
+                    <div class="text-xs text-slate-300 mt-1">لِلْمَسْحِ</div>
+                </div>
+            </div>
+
+            <!-- Butang Mula Besar -->
+            <button id="launchGameBtn" class="w-full bg-gradient-to-l from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-xl sm:text-2xl py-4 px-6 rounded-2xl border-2 border-emerald-200 shadow-xl transition transform hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-3">
+                <span>🚀</span>
+                <span>ابْدَأِ اللَّعِبَ</span>
+            </button>
+            <p id="cameraStatusMsg" class="text-xs text-slate-400 mt-3">
+                يُرْجَى السَّمَاحُ بِالْوُصُولِ إِلَى الْكَامِيرَا عِنْدَ الطَّلَبِ
+            </p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * PENUKAR ANGKA ARAB TIMUR (٠١٢٣٤٥٦٧٨٩)
+         * ============================================================================
+         */
+        function toArabicDigits(num) {
+            const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+            return String(num).replace(/\d/g, d => arabicDigits[d]);
+        }
+
+        /**
+         * ============================================================================
+         * PANGKALAN DATA 17 KOSA KATA BAHASA ARAB (المأكولات والمشروبات)
+         * ============================================================================
+         */
+        const VOCABULARY_LIST = [
+            { id: "rice",       arabicWithHarakat: "أَرُزٌّ",     arabicPlain: "أرز",      bg: "#fff1f2", border: "#fb7185", burst: "#facc15", imageUrl: "" },
+            { id: "bread",      arabicWithHarakat: "خُبْزٌ",     arabicPlain: "خبز",      bg: "#fff7ed", border: "#fb923c", burst: "#f59e0b", imageUrl: "" },
+            { id: "macaroni",   arabicWithHarakat: "مَكْرُونَةٌ", arabicPlain: "مكرونة",   bg: "#fefce8", border: "#facc15", burst: "#f97316", imageUrl: "" },
+            { id: "cake",       arabicWithHarakat: "كَعْكٌ",     arabicPlain: "كعك",      bg: "#fdf2f8", border: "#f472b6", burst: "#fb7185", imageUrl: "" },
+            { id: "candy",      arabicWithHarakat: "حَلْوَى",    arabicPlain: "حلوى",     bg: "#faf5ff", border: "#c084fc", burst: "#a855f7", imageUrl: "" },
+            { id: "icecream",   arabicWithHarakat: "بُوظَةٌ",    arabicPlain: "بوظة",     bg: "#f0f9ff", border: "#38bdf8", burst: "#0284c7", imageUrl: "" },
+            { id: "soup",       arabicWithHarakat: "حِسَاءٌ",    arabicPlain: "حساء",     bg: "#f0fdf4", border: "#4ade80", burst: "#f59e0b", imageUrl: "" },
+            { id: "fish",       arabicWithHarakat: "سَمَكٌ",     arabicPlain: "سمك",      bg: "#ecfeff", border: "#22d3ee", burst: "#facc15", imageUrl: "" },
+            { id: "chicken",    arabicWithHarakat: "دَجَاجٌ",    arabicPlain: "دجاج",     bg: "#fff1f2", border: "#f43f5e", burst: "#fb923c", imageUrl: "" },
+            { id: "meat",       arabicWithHarakat: "لَحْمٌ",     arabicPlain: "لحم",      bg: "#fff7ed", border: "#f97316", burst: "#facc15", imageUrl: "" },
+            { id: "vegetables", arabicWithHarakat: "خَضْرَاوَاتٌ", arabicPlain: "خضراوات", bg: "#f7fee7", border: "#84cc16", burst: "#22c55e", imageUrl: "" },
+            { id: "fruits",     arabicWithHarakat: "فَوَاكِهُ",   arabicPlain: "فواكه",    bg: "#fefce8", border: "#eab308", burst: "#f97316", imageUrl: "" },
+            { id: "water",      arabicWithHarakat: "مَاءٌ",      arabicPlain: "ماء",      bg: "#eff6ff", border: "#60a5fa", burst: "#38bdf8", imageUrl: "" },
+            { id: "milk",       arabicWithHarakat: "حَلِيبٌ",    arabicPlain: "حليب",     bg: "#f0f9ff", border: "#38bdf8", burst: "#60a5fa", imageUrl: "" },
+            { id: "tea",        arabicWithHarakat: "شَايٌ",      arabicPlain: "شاي",      bg: "#fdf2f8", border: "#f472b6", burst: "#fb923c", imageUrl: "" },
+            { id: "coffee",     arabicWithHarakat: "قَهْوَةٌ",   arabicPlain: "قهوة",     bg: "#fffbeb", border: "#f59e0b", burst: "#d97706", imageUrl: "" },
+            { id: "juice",      arabicWithHarakat: "عَصِيرٌ",    arabicPlain: "عصير",     bg: "#f5f3ff", border: "#a78bfa", burst: "#facc15", imageUrl: "" }
+        ];
+
+        /**
+         * ============================================================================
+         * PENJANA ILUSTRASI KAD BUKU CERITA BERKUALITI TINGGI (HTML5 CANVAS)
+         * Lukisan gaya kartun pendidikan ceria berbingkai pastel & pancaran penjuru
+         * ============================================================================
+         */
+        function drawRoundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        function drawLeaf(ctx, x, y, angle, scale = 1, color = "#22c55e") {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = color;
+            ctx.strokeStyle = "#14532d";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(-10, -14, -10, -28, 0, -34);
+            ctx.bezierCurveTo(10, -28, 10, -14, 0, 0);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -3);
+            ctx.lineTo(0, -27);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function generateAllCardIllustrations() {
+            const c = document.createElement("canvas");
+            c.width = 300;
+            c.height = 300;
+            const g = c.getContext("2d");
+
+            VOCABULARY_LIST.forEach(item => {
+                g.clearRect(0, 0, 300, 300);
+
+                // 1. Latar Belakang Kad Berbingkai Pastel Ceria
+                drawRoundRect(g, 10, 10, 280, 280, 38);
+                g.fillStyle = item.bg;
+                g.fill();
+                g.lineWidth = 8;
+                g.strokeStyle = item.border;
+                g.stroke();
+
+                // Kilauan lembut di bahagian tengah kad
+                const grad = g.createRadialGradient(150, 155, 10, 150, 155, 125);
+                grad.addColorStop(0, "rgba(255,255,255,0.95)");
+                grad.addColorStop(1, "rgba(255,255,255,0)");
+                g.fillStyle = grad;
+                g.fillRect(20, 20, 260, 260);
+
+                // 2. Tiga garisan pancaran kecil di penjuru atas kiri (sepadan gaya rujukan)
+                g.strokeStyle = item.burst;
+                g.lineWidth = 5;
+                g.lineCap = "round";
+                g.beginPath(); g.moveTo(36, 56); g.lineTo(48, 64); g.stroke();
+                g.beginPath(); g.moveTo(46, 38); g.lineTo(56, 50); g.stroke();
+                g.beginPath(); g.moveTo(64, 30); g.lineTo(68, 44); g.stroke();
+
+                // Bayang-bayang lembut di bawah objek makanan
+                g.fillStyle = "rgba(15, 23, 42, 0.12)";
+                g.beginPath();
+                g.ellipse(150, 248, 86, 15, 0, 0, Math.PI * 2);
+                g.fill();
+
+                g.save();
+                g.lineJoin = "round";
+                g.lineCap = "round";
+
+                switch (item.id) {
+                    case "rice": {
+                        // Timbunan nasi putih gebu
+                        g.fillStyle = "#ffffff";
+                        g.strokeStyle = "#cbd5e1";
+                        g.lineWidth = 3;
+                        g.beginPath();
+                        g.arc(150, 145, 76, Math.PI, 0);
+                        g.fill();
+                        g.stroke();
+
+                        // Butiran nasi gebu
+                        const grains = [
+                            [115,120],[135,108],[155,104],[175,112],[188,125],
+                            [102,135],[125,128],[148,122],[170,126],[196,138],
+                            [118,140],[140,136],[162,138],[182,140]
+                        ];
+                        g.fillStyle = "#f8fafc";
+                        grains.forEach(([gx, gy]) => {
+                            g.beginPath();
+                            g.ellipse(gx, gy, 10, 6, 0.2, 0, Math.PI * 2);
+                            g.fill();
+                            g.stroke();
+                        });
+
+                        // Daun pasli hijau di atas
+                        drawLeaf(g, 150, 96, -0.45, 0.85, "#22c55e");
+                        drawLeaf(g, 150, 96, 0.45, 0.85, "#16a34a");
+                        drawLeaf(g, 150, 96, 0, 0.9, "#4ade80");
+
+                        // Mangkuk biru corak tradisional
+                        const bowlGrad = g.createLinearGradient(70, 142, 230, 240);
+                        bowlGrad.addColorStop(0, "#38bdf8");
+                        bowlGrad.addColorStop(0.5, "#0284c7");
+                        bowlGrad.addColorStop(1, "#1e3a8a");
+                        g.fillStyle = bowlGrad;
+                        g.strokeStyle = "#1e3a8a";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(68, 142);
+                        g.bezierCurveTo(68, 222, 110, 242, 150, 242);
+                        g.bezierCurveTo(190, 242, 232, 222, 232, 142);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Jalur corak zig-zag putih tradisional
+                        g.strokeStyle = "#bae6fd";
+                        g.lineWidth = 3;
+                        g.beginPath();
+                        for (let x = 82; x <= 218; x += 17) {
+                            g.lineTo(x, (x / 17) % 2 === 0 ? 162 : 174);
+                        }
+                        g.stroke();
+                        break;
+                    }
+
+                    case "bread": {
+                        // Sebuku roti bakar perang keemasan
+                        const loafGrad = g.createLinearGradient(95, 75, 225, 215);
+                        loafGrad.addColorStop(0, "#fbbf24");
+                        loafGrad.addColorStop(0.5, "#d97706");
+                        loafGrad.addColorStop(1, "#92400e");
+                        g.fillStyle = loafGrad;
+                        g.strokeStyle = "#78350f";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(95, 130);
+                        g.bezierCurveTo(90, 82, 195, 68, 224, 108);
+                        g.lineTo(224, 196);
+                        g.bezierCurveTo(224, 212, 140, 226, 110, 212);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Keratan dalam roti (kuning krim lembut)
+                        g.fillStyle = "#fef3c7";
+                        g.beginPath();
+                        g.moveTo(96, 132);
+                        g.bezierCurveTo(96, 98, 156, 98, 156, 132);
+                        g.lineTo(156, 208);
+                        g.lineTo(96, 208);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Kepingan hirisan roti di hadapan
+                        g.fillStyle = "#d97706";
+                        drawRoundRect(g, 56, 158, 86, 76, 18);
+                        g.fill();
+                        g.stroke();
+                        g.fillStyle = "#fef9c3";
+                        drawRoundRect(g, 64, 166, 70, 60, 12);
+                        g.fill();
+
+                        // Tangkai gandum keemasan di sisi kanan
+                        g.strokeStyle = "#b45309";
+                        g.lineWidth = 3;
+                        g.beginPath();
+                        g.moveTo(185, 232);
+                        g.quadraticCurveTo(225, 200, 252, 165);
+                        g.stroke();
+                        g.fillStyle = "#facc15";
+                        for (let i = 0; i < 4; i++) {
+                            g.beginPath();
+                            g.ellipse(205 + i * 11, 212 - i * 11, 8, 4, -0.5, 0, Math.PI * 2);
+                            g.fill();
+                            g.stroke();
+                        }
+                        break;
+                    }
+
+                    case "macaroni": {
+                        // Pinggan putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(150, 206, 105, 34, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Timbunan makaroni kuning melengkung
+                        const macCoords = [
+                            [105,185,0.2],[135,188,-0.2],[168,186,0.3],[195,182,-0.3],
+                            [115,165,-0.4],[148,168,0.1],[180,164,0.4],[130,148,0.2],[165,148,-0.2]
+                        ];
+                        g.strokeStyle = "#b45309";
+                        g.lineWidth = 3;
+                        macCoords.forEach(([mx, my, rot]) => {
+                            g.save();
+                            g.translate(mx, my);
+                            g.rotate(rot);
+                            g.fillStyle = "#facc15";
+                            g.beginPath();
+                            g.arc(0, 0, 22, Math.PI * 0.1, Math.PI * 0.9);
+                            g.arc(0, 0, 10, Math.PI * 0.9, Math.PI * 0.1, true);
+                            g.closePath();
+                            g.fill();
+                            g.stroke();
+                            g.restore();
+                        });
+
+                        // Sos tomato merah berkilat di atas
+                        g.fillStyle = "#ef4444";
+                        g.strokeStyle = "#991b1b";
+                        g.beginPath();
+                        g.moveTo(106, 152);
+                        g.bezierCurveTo(104, 122, 196, 122, 194, 152);
+                        g.bezierCurveTo(182, 166, 162, 154, 150, 164);
+                        g.bezierCurveTo(136, 154, 118, 166, 106, 152);
+                        g.fill();
+                        g.stroke();
+
+                        // Daun selasih hijau di puncak
+                        drawLeaf(g, 150, 128, -0.5, 0.85, "#22c55e");
+                        drawLeaf(g, 150, 128, 0.5, 0.85, "#16a34a");
+                        break;
+                    }
+
+                    case "cake": {
+                        // Pinggan kertas renda bawah kek
+                        g.fillStyle = "#ffffff";
+                        g.strokeStyle = "#cbd5e1";
+                        g.lineWidth = 3;
+                        g.beginPath();
+                        g.ellipse(150, 224, 98, 24, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Badan kek coklat segitiga 3D
+                        g.fillStyle = "#5c2d16";
+                        g.strokeStyle = "#3b1708";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(76, 128);
+                        g.lineTo(222, 148);
+                        g.lineTo(222, 218);
+                        g.lineTo(76, 196);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Lapisan krim merah jambu di tengah kek
+                        g.fillStyle = "#fbcfe8";
+                        g.fillRect(78, 156, 142, 11);
+                        g.fillRect(78, 182, 142, 11);
+
+                        // Bahagian atas kek coklat berkilat
+                        g.fillStyle = "#78350f";
+                        g.beginPath();
+                        g.moveTo(76, 128);
+                        g.lineTo(156, 86);
+                        g.lineTo(222, 148);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Krim putar putih & buah strawberi merah di atas
+                        g.fillStyle = "#ffffff";
+                        g.beginPath();
+                        g.arc(150, 112, 22, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        g.fillStyle = "#ef4444";
+                        g.strokeStyle = "#991b1b";
+                        g.beginPath();
+                        g.moveTo(150, 62);
+                        g.bezierCurveTo(172, 62, 174, 96, 150, 108);
+                        g.bezierCurveTo(126, 96, 128, 62, 150, 62);
+                        g.fill();
+                        g.stroke();
+                        drawLeaf(g, 150, 64, -0.6, 0.55, "#22c55e");
+                        drawLeaf(g, 150, 64, 0.6, 0.55, "#22c55e");
+                        break;
+                    }
+
+                    case "candy": {
+                        // Fungsi lukis sebiji gula-gula berbalut berkilat
+                        const drawWrappedCandy = (cx, cy, rot, mainCol, stripeCol) => {
+                            g.save();
+                            g.translate(cx, cy);
+                            g.rotate(rot);
+                            g.strokeStyle = "#1e293b";
+                            g.lineWidth = 3.5;
+
+                            // Hujung pembalut kiri & kanan
+                            g.fillStyle = mainCol;
+                            g.beginPath();
+                            g.moveTo(-34, 0); g.lineTo(-64, -22); g.lineTo(-58, 0); g.lineTo(-64, 22);
+                            g.closePath(); g.fill(); g.stroke();
+
+                            g.beginPath();
+                            g.moveTo(34, 0); g.lineTo(64, -22); g.lineTo(58, 0); g.lineTo(64, 22);
+                            g.closePath(); g.fill(); g.stroke();
+
+                            // Badan gula-gula bulat
+                            g.beginPath();
+                            g.ellipse(0, 0, 38, 28, 0, 0, Math.PI * 2);
+                            g.fill();
+                            g.stroke();
+
+                            // Jalur belang
+                            g.fillStyle = stripeCol;
+                            g.beginPath();
+                            g.ellipse(-12, 0, 7, 25, 0.2, 0, Math.PI * 2);
+                            g.ellipse(12, 0, 7, 25, 0.2, 0, Math.PI * 2);
+                            g.fill();
+
+                            // Kilauan putih
+                            g.fillStyle = "rgba(255,255,255,0.65)";
+                            g.beginPath();
+                            g.ellipse(-8, -12, 14, 5, -0.2, 0, Math.PI * 2);
+                            g.fill();
+                            g.restore();
+                        };
+
+                        drawWrappedCandy(115, 192, -0.35, "#facc15", "#f97316");
+                        drawWrappedCandy(186, 188, 0.3, "#3b82f6", "#93c5fd");
+                        drawWrappedCandy(150, 122, -0.15, "#ec4899", "#fbcfe8");
+                        break;
+                    }
+
+                    case "icecream": {
+                        // Kon wafel rangup
+                        g.fillStyle = "#f59e0b";
+                        g.strokeStyle = "#92400e";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(106, 148);
+                        g.lineTo(194, 148);
+                        g.lineTo(150, 248);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Garis silang wafel
+                        g.lineWidth = 2.5;
+                        g.beginPath();
+                        g.moveTo(122, 150); g.lineTo(164, 214);
+                        g.moveTo(146, 150); g.lineTo(176, 194);
+                        g.moveTo(178, 150); g.lineTo(136, 214);
+                        g.moveTo(154, 150); g.lineTo(124, 194);
+                        g.stroke();
+
+                        // Skop aiskrim strawberi merah jambu
+                        g.fillStyle = "#f472b6";
+                        g.strokeStyle = "#9d174d";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.arc(150, 114, 48, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Sos coklat cair di atas skop
+                        g.fillStyle = "#5c2d16";
+                        g.beginPath();
+                        g.arc(150, 96, 40, Math.PI, 0);
+                        g.bezierCurveTo(190, 115, 175, 122, 168, 108);
+                        g.bezierCurveTo(160, 128, 144, 126, 138, 108);
+                        g.bezierCurveTo(128, 122, 112, 115, 110, 96);
+                        g.fill();
+
+                        // Taburan warna-warni
+                        const sprinkles = [[135,78,"#facc15"],[155,72,"#38bdf8"],[170,84,"#4ade80"],[145,88,"#ffffff"]];
+                        sprinkles.forEach(([sx, sy, col]) => {
+                            g.fillStyle = col;
+                            g.fillRect(sx, sy, 8, 4);
+                        });
+                        break;
+                    }
+
+                    case "soup": {
+                        // Wap panas naik ke atas
+                        g.strokeStyle = "rgba(148, 163, 184, 0.7)";
+                        g.lineWidth = 4;
+                        [125, 150, 175].forEach(wx => {
+                            g.beginPath();
+                            g.moveTo(wx, 112);
+                            g.quadraticCurveTo(wx - 8, 95, wx, 80);
+                            g.quadraticCurveTo(wx + 8, 65, wx, 52);
+                            g.stroke();
+                        });
+
+                        // Mangkuk sup putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#64748b";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(64, 146);
+                        g.bezierCurveTo(64, 224, 110, 240, 150, 240);
+                        g.bezierCurveTo(190, 240, 236, 224, 236, 146);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Permukaan sup keemasan hangat
+                        g.fillStyle = "#f59e0b";
+                        g.beginPath();
+                        g.ellipse(150, 146, 82, 24, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Potongan lobak merah & kacang hijau
+                        g.fillStyle = "#ea580c";
+                        g.beginPath(); g.arc(118, 146, 7, 0, Math.PI * 2); g.fill();
+                        g.beginPath(); g.arc(182, 148, 7, 0, Math.PI * 2); g.fill();
+                        g.fillStyle = "#22c55e";
+                        g.beginPath(); g.arc(134, 154, 5, 0, Math.PI * 2); g.fill();
+                        g.beginPath(); g.arc(168, 140, 5, 0, Math.PI * 2); g.fill();
+                        drawLeaf(g, 150, 146, -0.5, 0.7, "#16a34a");
+                        drawLeaf(g, 150, 146, 0.5, 0.7, "#22c55e");
+                        break;
+                    }
+
+                    case "fish": {
+                        // Pinggan putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(150, 198, 108, 38, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Daun salad hijau
+                        g.fillStyle = "#4ade80";
+                        g.beginPath();
+                        g.ellipse(145, 184, 82, 22, 0, 0, Math.PI * 2);
+                        g.fill();
+
+                        // Badan ikan panggang keemasan
+                        const fishGrad = g.createLinearGradient(75, 120, 210, 195);
+                        fishGrad.addColorStop(0, "#fbbf24");
+                        fishGrad.addColorStop(0.6, "#d97706");
+                        fishGrad.addColorStop(1, "#92400e");
+                        g.fillStyle = fishGrad;
+                        g.strokeStyle = "#78350f";
+                        g.lineWidth = 4;
+
+                        // Ekor ikan
+                        g.beginPath();
+                        g.moveTo(192, 158);
+                        g.lineTo(238, 126);
+                        g.lineTo(226, 158);
+                        g.lineTo(238, 190);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Badan utama ikan
+                        g.beginPath();
+                        g.moveTo(64, 160);
+                        g.bezierCurveTo(96, 106, 168, 106, 202, 158);
+                        g.bezierCurveTo(168, 204, 96, 204, 64, 160);
+                        g.fill();
+                        g.stroke();
+
+                        // Mata ikan & garisan panggang
+                        g.fillStyle = "#ffffff";
+                        g.beginPath(); g.arc(92, 152, 7, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.fillStyle = "#0f172a";
+                        g.beginPath(); g.arc(90, 152, 3.5, 0, Math.PI * 2); g.fill();
+
+                        g.beginPath();
+                        g.moveTo(126, 134); g.lineTo(120, 176);
+                        g.moveTo(148, 132); g.lineTo(142, 178);
+                        g.moveTo(170, 136); g.lineTo(164, 174);
+                        g.stroke();
+
+                        // Dua hirisan lemon kuning
+                        [158, 186].forEach(lx => {
+                            g.fillStyle = "#fef08a";
+                            g.strokeStyle = "#eab308";
+                            g.beginPath(); g.arc(lx, 196, 17, 0, Math.PI * 2); g.fill(); g.stroke();
+                        });
+                        break;
+                    }
+
+                    case "chicken": {
+                        // Pinggan putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(150, 202, 108, 36, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Daun salad
+                        g.fillStyle = "#22c55e";
+                        g.beginPath();
+                        g.ellipse(150, 188, 86, 20, 0, 0, Math.PI * 2);
+                        g.fill();
+
+                        // Ayam panggang perang keemasan
+                        const chkGrad = g.createLinearGradient(90, 105, 200, 195);
+                        chkGrad.addColorStop(0, "#fbbf24");
+                        chkGrad.addColorStop(0.5, "#ea580c");
+                        chkGrad.addColorStop(1, "#9a3412");
+                        g.fillStyle = chkGrad;
+                        g.strokeStyle = "#7c2d12";
+                        g.lineWidth = 4;
+
+                        // Badan ayam
+                        g.beginPath();
+                        g.ellipse(146, 154, 64, 42, -0.1, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Peha ayam & tulang putih
+                        g.fillStyle = "#fef3c7";
+                        g.beginPath(); g.arc(216, 146, 9, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.fillStyle = chkGrad;
+                        g.beginPath();
+                        g.ellipse(174, 166, 36, 18, -0.35, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+                        break;
+                    }
+
+                    case "meat": {
+                        // Pinggan putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(150, 196, 108, 40, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Dua keping stik daging segar merah berurat putih
+                        const drawSteak = (sx, sy, rot) => {
+                            g.save();
+                            g.translate(sx, sy);
+                            g.rotate(rot);
+                            g.fillStyle = "#dc2626";
+                            g.strokeStyle = "#7f1d1d";
+                            g.lineWidth = 4;
+                            g.beginPath();
+                            g.moveTo(-54, -8);
+                            g.bezierCurveTo(-54, -34, 48, -32, 54, -4);
+                            g.bezierCurveTo(58, 24, -42, 30, -54, -8);
+                            g.fill();
+                            g.stroke();
+
+                            // Urat lemak putih
+                            g.strokeStyle = "#fecaca";
+                            g.lineWidth = 3.5;
+                            g.beginPath();
+                            g.moveTo(-30, -12); g.quadraticCurveTo(0, 4, 34, -8);
+                            g.moveTo(-18, 8); g.quadraticCurveTo(10, 16, 28, 6);
+                            g.stroke();
+                            g.restore();
+                        };
+
+                        drawSteak(166, 142, 0.15);
+                        drawSteak(126, 174, -0.1);
+
+                        // Tangkai rosemary hijau
+                        drawLeaf(g, 195, 204, 0.9, 0.75, "#16a34a");
+                        drawLeaf(g, 206, 200, 1.1, 0.75, "#22c55e");
+                        break;
+                    }
+
+                    case "vegetables": {
+                        // Daun salad & Brokoli hijau di belakang
+                        g.fillStyle = "#4ade80";
+                        g.strokeStyle = "#15803d";
+                        g.lineWidth = 4;
+                        g.beginPath(); g.arc(135, 130, 46, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.fillStyle = "#16a34a";
+                        g.beginPath(); g.arc(195, 145, 34, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.beginPath(); g.arc(178, 128, 28, 0, Math.PI * 2); g.fill(); g.stroke();
+
+                        // Tomato merah berkilat
+                        g.fillStyle = "#ef4444";
+                        g.strokeStyle = "#991b1b";
+                        g.beginPath(); g.arc(98, 186, 36, 0, Math.PI * 2); g.fill(); g.stroke();
+                        drawLeaf(g, 98, 152, -0.8, 0.6, "#16a34a");
+                        drawLeaf(g, 98, 152, 0.8, 0.6, "#16a34a");
+
+                        // Dua batang lobak merah
+                        const drawCarrot = (cx, cy, rot) => {
+                            g.save();
+                            g.translate(cx, cy);
+                            g.rotate(rot);
+                            g.fillStyle = "#f97316";
+                            g.strokeStyle = "#9a3412";
+                            g.lineWidth = 3.5;
+                            g.beginPath();
+                            g.moveTo(-48, 0);
+                            g.bezierCurveTo(-48, -16, 36, -10, 52, 0);
+                            g.bezierCurveTo(36, 10, -48, 16, -48, 0);
+                            g.fill();
+                            g.stroke();
+                            g.restore();
+                        };
+                        drawCarrot(176, 184, 0.35);
+                        drawCarrot(164, 212, 0.25);
+                        break;
+                    }
+
+                    case "fruits": {
+                        // Pisang kuning di belakang
+                        g.fillStyle = "#facc15";
+                        g.strokeStyle = "#a16207";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(76, 148);
+                        g.quadraticCurveTo(132, 165, 168, 92);
+                        g.quadraticCurveTo(182, 148, 122, 178);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Anggur ungu berangkai di kanan
+                        const grapes = [
+                            [196,144],[216,148],[186,164],[206,166],[224,168],
+                            [194,184],[214,186],[204,204]
+                        ];
+                        g.fillStyle = "#9333ea";
+                        g.strokeStyle = "#581c87";
+                        grapes.forEach(([gx, gy]) => {
+                            g.beginPath(); g.arc(gx, gy, 14, 0, Math.PI * 2); g.fill(); g.stroke();
+                        });
+
+                        // Epal merah
+                        g.fillStyle = "#ef4444";
+                        g.strokeStyle = "#991b1b";
+                        g.beginPath(); g.arc(110, 184, 34, 0, Math.PI * 2); g.fill(); g.stroke();
+                        drawLeaf(g, 110, 150, 0.5, 0.65, "#22c55e");
+
+                        // Oren segar di hadapan
+                        g.fillStyle = "#f97316";
+                        g.strokeStyle = "#9a3412";
+                        g.beginPath(); g.arc(154, 198, 32, 0, Math.PI * 2); g.fill(); g.stroke();
+                        break;
+                    }
+
+                    case "water": {
+                        // Percikan titisan air di bahagian atas
+                        g.fillStyle = "#38bdf8";
+                        g.strokeStyle = "#0284c7";
+                        g.lineWidth = 3;
+                        [[106,82],[196,78],[145,68]].forEach(([dx, dy]) => {
+                            g.beginPath(); g.arc(dx, dy, 6, 0, Math.PI * 2); g.fill(); g.stroke();
+                        });
+
+                        // Gelas kaca jernih
+                        g.fillStyle = "rgba(224, 242, 254, 0.55)";
+                        g.strokeStyle = "#0284c7";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(96, 98);
+                        g.lineTo(204, 98);
+                        g.lineTo(188, 238);
+                        g.lineTo(112, 238);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Air biru muda segar di dalam gelas
+                        const waterGrad = g.createLinearGradient(100, 128, 190, 235);
+                        waterGrad.addColorStop(0, "#7dd3fc");
+                        waterGrad.addColorStop(1, "#0ea5e9");
+                        g.fillStyle = waterGrad;
+                        g.beginPath();
+                        g.moveTo(100, 130);
+                        g.quadraticCurveTo(150, 142, 200, 130);
+                        g.lineTo(186, 234);
+                        g.lineTo(114, 234);
+                        g.closePath();
+                        g.fill();
+                        break;
+                    }
+
+                    case "milk": {
+                        // Kotak susu biru-putih comel
+                        g.fillStyle = "#ffffff";
+                        g.strokeStyle = "#0369a1";
+                        g.lineWidth = 4;
+                        drawRoundRect(g, 66, 102, 92, 136, 12);
+                        g.fill();
+                        g.stroke();
+
+                        // Bahagian atas kotak biru
+                        g.fillStyle = "#0284c7";
+                        g.beginPath();
+                        g.moveTo(66, 108);
+                        g.lineTo(112, 72);
+                        g.lineTo(158, 108);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Muka lembu comel pada kotak susu
+                        g.fillStyle = "#fbcfe8";
+                        g.beginPath(); g.ellipse(112, 178, 24, 18, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.fillStyle = "#0f172a";
+                        g.beginPath(); g.arc(103, 154, 4, 0, Math.PI * 2); g.arc(121, 154, 4, 0, Math.PI * 2); g.fill();
+
+                        // Segelas susu putih penuh di sebelah
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#64748b";
+                        g.beginPath();
+                        g.moveTo(172, 132);
+                        g.lineTo(234, 132);
+                        g.lineTo(224, 238);
+                        g.lineTo(182, 238);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        g.fillStyle = "#ffffff";
+                        g.fillRect(177, 152, 52, 82);
+                        break;
+                    }
+
+                    case "tea": {
+                        // Wap teh hangat
+                        g.strokeStyle = "rgba(148, 163, 184, 0.7)";
+                        g.lineWidth = 3.5;
+                        g.beginPath();
+                        g.moveTo(148, 105);
+                        g.quadraticCurveTo(138, 86, 150, 70);
+                        g.stroke();
+
+                        // Piring putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(146, 214, 88, 24, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Tangkai cawan
+                        g.beginPath();
+                        g.arc(204, 158, 22, -Math.PI * 0.5, Math.PI * 0.5);
+                        g.lineWidth = 8;
+                        g.stroke();
+
+                        // Cawan kaca berisi teh merah keperangan
+                        g.lineWidth = 4;
+                        g.fillStyle = "#b45309";
+                        g.strokeStyle = "#78350f";
+                        g.beginPath();
+                        g.moveTo(92, 122);
+                        g.lineTo(200, 122);
+                        g.bezierCurveTo(200, 198, 174, 210, 146, 210);
+                        g.bezierCurveTo(118, 210, 92, 198, 92, 122);
+                        g.fill();
+                        g.stroke();
+
+                        // Dua helai daun teh hijau segar di sisi
+                        drawLeaf(g, 92, 214, -0.9, 0.85, "#22c55e");
+                        drawLeaf(g, 96, 214, -0.3, 0.85, "#16a34a");
+                        break;
+                    }
+
+                    case "coffee": {
+                        // Piring putih
+                        g.fillStyle = "#f8fafc";
+                        g.strokeStyle = "#94a3b8";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.ellipse(150, 214, 92, 24, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.stroke();
+
+                        // Tangkai cawan
+                        g.beginPath();
+                        g.arc(208, 156, 22, -Math.PI * 0.5, Math.PI * 0.5);
+                        g.lineWidth = 8;
+                        g.stroke();
+
+                        // Cawan kopi putih
+                        g.lineWidth = 4;
+                        g.fillStyle = "#ffffff";
+                        g.beginPath();
+                        g.moveTo(92, 118);
+                        g.lineTo(208, 118);
+                        g.bezierCurveTo(208, 196, 178, 210, 150, 210);
+                        g.bezierCurveTo(122, 210, 92, 196, 92, 118);
+                        g.fill();
+                        g.stroke();
+
+                        // Kopi coklat dengan seni buih latte
+                        g.fillStyle = "#78350f";
+                        g.beginPath();
+                        g.ellipse(150, 122, 54, 18, 0, 0, Math.PI * 2);
+                        g.fill();
+                        g.fillStyle = "#fef3c7";
+                        g.beginPath();
+                        g.arc(144, 121, 7, 0, Math.PI * 2);
+                        g.arc(156, 121, 7, 0, Math.PI * 2);
+                        g.fill();
+
+                        // Dua biji kopi panggang di sisi
+                        g.fillStyle = "#451a03";
+                        g.beginPath(); g.ellipse(98, 218, 12, 8, 0.3, 0, Math.PI * 2); g.fill();
+                        g.beginPath(); g.ellipse(122, 224, 12, 8, -0.2, 0, Math.PI * 2); g.fill();
+                        break;
+                    }
+
+                    case "juice": {
+                        // Penyedut minuman merah
+                        g.strokeStyle = "#ef4444";
+                        g.lineWidth = 9;
+                        g.beginPath();
+                        g.moveTo(156, 165);
+                        g.lineTo(186, 76);
+                        g.lineTo(222, 72);
+                        g.stroke();
+
+                        // Gelas tinggi
+                        g.fillStyle = "rgba(255,255,255,0.65)";
+                        g.strokeStyle = "#64748b";
+                        g.lineWidth = 4;
+                        g.beginPath();
+                        g.moveTo(98, 98);
+                        g.lineTo(194, 98);
+                        g.lineTo(182, 238);
+                        g.lineTo(110, 238);
+                        g.closePath();
+                        g.fill();
+                        g.stroke();
+
+                        // Jus oren kuning keemasan
+                        const juiceGrad = g.createLinearGradient(100, 124, 185, 235);
+                        juiceGrad.addColorStop(0, "#facc15");
+                        juiceGrad.addColorStop(1, "#f97316");
+                        g.fillStyle = juiceGrad;
+                        g.beginPath();
+                        g.moveTo(102, 126);
+                        g.lineTo(190, 126);
+                        g.lineTo(179, 234);
+                        g.lineTo(113, 234);
+                        g.closePath();
+                        g.fill();
+
+                        // Hirisan buah oren di hadapan gelas
+                        g.fillStyle = "#f97316";
+                        g.strokeStyle = "#9a3412";
+                        g.beginPath(); g.arc(194, 214, 30, 0, Math.PI * 2); g.fill(); g.stroke();
+                        g.fillStyle = "#fed7aa";
+                        g.beginPath(); g.arc(194, 214, 23, 0, Math.PI * 2); g.fill();
+                        break;
+                    }
+                }
+
+                g.restore();
+                item.imageUrl = c.toDataURL("image/png");
+            });
+        }
+
+        // Jana semua 17 ilustrasi kad sebaik sahaja skrip dimuatkan
+        generateAllCardIllustrations();
+
+        /**
+         * ============================================================================
+         * PEMBOLEH UBAH KEADAAN PERMAINAN (GAME STATE)
+         * ============================================================================
+         */
+        let currentIndex = 0;
+        let score = 0;
+        let currentInkColor = "#ef4444";
+        let useHarakat = true;
+        let isStimulusPhase = false;
+        let stimulusTimer = null;
+
+        const videoElement = document.getElementById("webcamVideo");
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let isGameStarted = false;
+        let cameraInstance = null;
+        let strokes = [];
+        let currentStroke = null;
+
+        let smoothX = null;
+        let smoothY = null;
+        const SMOOTHING_FACTOR = 0.45;
+
+        let fistHoldStart = null;
+        const FIST_HOLD_DURATION = 1500;
+
+        let hoveredButton = null;
+        let buttonHoverStart = null;
+        const BUTTON_DWELL_DURATION = 1000;
+
+        let confettiParticles = [];
+
+        /**
+         * ============================================================================
+         * MUZIK LATAR BELAKANG INSTRUMENTAL & KESAN BUNYI (WEB AUDIO API)
+         * ============================================================================
+         */
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        let isMusicPlaying = true;
+        let bgmInterval = null;
+        let bgmStep = 0;
+
+        const BGM_MELODY = [
+            523.25, 0, 659.25, 587.33, 523.25, 0, 392.00, 0,
+            440.00, 0, 523.25, 440.00, 392.00, 0, 0, 0,
+            587.33, 0, 659.25, 783.99, 659.25, 0, 523.25, 0,
+            587.33, 0, 493.88, 392.00, 523.25, 0, 0, 0
+        ];
+
+        const BGM_BASS = [
+            261.63, 0, 0, 0, 196.00, 0, 0, 0,
+            220.00, 0, 0, 0, 196.00, 0, 0, 0,
+            293.66, 0, 0, 0, 261.63, 0, 0, 0,
+            196.00, 0, 0, 0, 261.63, 0, 0, 0
+        ];
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContextClass();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+        }
+
+        function playBgmNote(freq, type, duration, volume) {
+            if (!audioCtx || !isMusicPlaying || freq === 0) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(volume, now + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + duration + 0.02);
+            } catch (e) {}
+        }
+
+        function startBackgroundMusic() {
+            initAudio();
+            if (bgmInterval) clearInterval(bgmInterval);
+            bgmStep = 0;
+            bgmInterval = setInterval(() => {
+                if (!isMusicPlaying) return;
+                playBgmNote(BGM_MELODY[bgmStep % BGM_MELODY.length], "sine", 0.32, 0.055);
+                playBgmNote(BGM_BASS[bgmStep % BGM_BASS.length], "triangle", 0.55, 0.04);
+                bgmStep++;
+            }, 260);
+        }
+
+        function toggleBackgroundMusic() {
+            isMusicPlaying = !isMusicPlaying;
+            const icon = document.getElementById("musicIcon");
+            const label = document.getElementById("musicLabel");
+            if (isMusicPlaying) {
+                initAudio();
+                icon.textContent = "🎵";
+                label.textContent = "الْمُوسِيقَى: تَشْغِيل";
+                if (!bgmInterval) startBackgroundMusic();
+            } else {
+                icon.textContent = "🔇";
+                label.textContent = "الْمُوسِيقَى: إِيقَاف";
+            }
+        }
+
+        function playPopSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.12);
+            } catch (e) {}
+        }
+
+        function playEraseSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(340, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) {}
+        }
+
+        function playSuccessSound() {
+            try {
+                initAudio();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "triangle";
+                    const startTime = audioCtx.currentTime + idx * 0.11;
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.25, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.35);
+                });
+            } catch (e) {}
+        }
+
+        function getCurrentArabicText(item) {
+            return useHarakat ? item.arabicWithHarakat : item.arabicPlain;
+        }
+
+        /**
+         * ============================================================================
+         * KAWALAN ALIRAN SOALAN, POP-UP RANGSANGAN & SKRIN TAHNIAH
+         * ============================================================================
+         */
+        function returnToHomeScreen() {
+            isGameStarted = false;
+            isStimulusPhase = false;
+            if (stimulusTimer) clearInterval(stimulusTimer);
+            clearDrawingCanvas(false);
+            confettiParticles = [];
+
+            document.getElementById("stimulusModal").classList.add("hidden");
+            document.getElementById("celebrationModal").classList.add("hidden");
+            document.getElementById("wordListModal").classList.add("hidden");
+            document.getElementById("miniReferenceCard").classList.add("hidden");
+            document.getElementById("writingAreaOverlay").classList.add("opacity-0");
+            document.getElementById("fistProgressContainer").classList.add("hidden");
+
+            const launchBtn = document.getElementById("launchGameBtn");
+            launchBtn.disabled = false;
+            launchBtn.innerHTML = '<span>🚀</span><span>ابْدَأِ اللَّعِبَ</span>';
+            document.getElementById("cameraStatusMsg").textContent = "يُرْجَى السَّمَاحُ بِالْوُصُولِ إِلَى الْكَامِيرَا عِنْدَ الطَّلَبِ";
+            document.getElementById("cameraStatusMsg").className = "text-xs text-slate-400 mt-3";
+
+            document.getElementById("startScreenOverlay").classList.remove("hidden");
+        }
+
+        function loadQuestion(index) {
+            currentIndex = (index + VOCABULARY_LIST.length) % VOCABULARY_LIST.length;
+            const item = VOCABULARY_LIST[currentIndex];
+
+            clearDrawingCanvas(false);
+
+            // Papar gambar sahaja tanpa teks perkataan
+            document.getElementById("wordProgressText").textContent = `${toArabicDigits(currentIndex + 1)} / ١٧`;
+            document.getElementById("modalQuestionNum").textContent = toArabicDigits(currentIndex + 1);
+            document.getElementById("modalCardImg").src = item.imageUrl;
+            document.getElementById("miniCardImg").src = item.imageUrl;
+
+            isStimulusPhase = true;
+            document.getElementById("stimulusModal").classList.remove("hidden");
+            document.getElementById("miniReferenceCard").classList.add("hidden");
+            document.getElementById("writingAreaOverlay").classList.add("opacity-0");
+
+            startStimulusCountdown();
+        }
+
+        function startStimulusCountdown() {
+            if (stimulusTimer) clearInterval(stimulusTimer);
+            const duration = 3000; // 3 saat
+            const startTime = Date.now();
+            const timerBar = document.getElementById("modalTimerBar");
+            const secText = document.getElementById("countdownSec");
+
+            stimulusTimer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, duration - elapsed);
+                const pct = (remaining / duration) * 100;
+
+                timerBar.style.width = `${pct}%`;
+                secText.textContent = toArabicDigits(Math.max(1, Math.ceil(remaining / 1000)));
+
+                if (remaining <= 0) {
+                    clearInterval(stimulusTimer);
+                    enterWritingPhase();
+                }
+            }, 50);
+        }
+
+        function enterWritingPhase() {
+            if (!isStimulusPhase) return;
+            if (stimulusTimer) clearInterval(stimulusTimer);
+            isStimulusPhase = false;
+            document.getElementById("stimulusModal").classList.add("hidden");
+            document.getElementById("miniReferenceCard").classList.remove("hidden");
+            document.getElementById("writingAreaOverlay").classList.remove("opacity-0");
+        }
+
+        function clearDrawingCanvas(withSound = true) {
+            strokes = [];
+            currentStroke = null;
+            if (withSound) playEraseSound();
+        }
+
+        function handleCompleteWord() {
+            if (isStimulusPhase) return;
+
+            const item = VOCABULARY_LIST[currentIndex];
+            const arabicWord = getCurrentArabicText(item);
+            score += 10;
+            document.getElementById("scoreDisplay").textContent = toArabicDigits(score);
+
+            document.getElementById("celebrationCardImg").src = item.imageUrl;
+            document.getElementById("completedArabicWord").textContent = arabicWord;
+
+            playSuccessSound();
+            spawnConfetti();
+
+            document.getElementById("celebrationModal").classList.remove("hidden");
+        }
+
+        /**
+         * ============================================================================
+         * PENGESANAN ISYARAT TANGAN (HAND GESTURE) & BUTANG MAYA
+         * ============================================================================
+         */
+        function detectHandGesture(landmarks) {
+            const indexUp  = landmarks[8].y < landmarks[6].y;
+            const middleUp = landmarks[12].y < landmarks[10].y;
+            const ringUp   = landmarks[16].y < landmarks[14].y;
+            const pinkyUp  = landmarks[20].y < landmarks[18].y;
+
+            const upCount = [indexUp, middleUp, ringUp, pinkyUp].filter(Boolean).length;
+
+            if (indexUp && !middleUp && !ringUp && !pinkyUp) return "WRITE";
+            if (upCount >= 4) return "OPEN_PALM";
+            if (upCount === 0) return "FIST";
+            return "NEUTRAL";
+        }
+
+        function updateGestureUI(gesture) {
+            const badge = document.getElementById("gestureBadge");
+            const icon = document.getElementById("gestureIcon");
+            const text = document.getElementById("gestureText");
+
+            badge.classList.remove("border-emerald-400", "border-sky-400", "border-rose-500", "border-slate-500");
+
+            if (gesture === "WRITE") {
+                badge.classList.add("border-emerald-400");
+                icon.textContent = "✍️";
+                text.textContent = "يَكْتُبُ";
+                text.className = "text-xs sm:text-sm font-black text-emerald-300";
+            } else if (gesture === "OPEN_PALM") {
+                badge.classList.add("border-sky-400");
+                icon.textContent = "✋";
+                text.textContent = "رَفْعُ الْقَلَمِ";
+                text.className = "text-xs sm:text-sm font-black text-sky-300";
+            } else if (gesture === "FIST") {
+                badge.classList.add("border-rose-500");
+                icon.textContent = "✊";
+                text.textContent = "جَارِي الْمَسْحِ...";
+                text.className = "text-xs sm:text-sm font-black text-rose-300";
+            } else {
+                badge.classList.add("border-slate-500");
+                icon.textContent = "🖐️";
+                text.textContent = "جَاهِزٌ";
+                text.className = "text-xs sm:text-sm font-black text-white";
+            }
+        }
+
+        function checkVirtualButtonInteraction(fingerX, fingerY) {
+            const buttons = document.querySelectorAll(".virtual-btn");
+            let foundBtn = null;
+
+            buttons.forEach(btn => {
+                if (btn.offsetParent === null) return;
+                const rect = btn.getBoundingClientRect();
+                if (fingerX >= rect.left && fingerX <= rect.right && fingerY >= rect.top && fingerY <= rect.bottom) {
+                    foundBtn = btn;
+                }
+            });
+
+            if (hoveredButton && hoveredButton !== foundBtn) {
+                hoveredButton.classList.remove("hovered");
+                const fill = hoveredButton.querySelector(".dwell-fill");
+                if (fill) fill.style.width = "0%";
+                hoveredButton = null;
+                buttonHoverStart = null;
+            }
+
+            if (foundBtn) {
+                if (hoveredButton !== foundBtn) {
+                    hoveredButton = foundBtn;
+                    buttonHoverStart = Date.now();
+                    hoveredButton.classList.add("hovered");
+                } else {
+                    const elapsed = Date.now() - buttonHoverStart;
+                    const progress = Math.min(100, (elapsed / BUTTON_DWELL_DURATION) * 100);
+                    const fill = hoveredButton.querySelector(".dwell-fill");
+                    if (fill) fill.style.width = `${progress}%`;
+
+                    if (elapsed >= BUTTON_DWELL_DURATION) {
+                        hoveredButton.click();
+                        playPopSound();
+                        hoveredButton.classList.remove("hovered");
+                        if (fill) fill.style.width = "0%";
+                        hoveredButton = null;
+                        buttonHoverStart = null;
+                    }
+                }
+            }
+        }
+
+        /**
+         * ============================================================================
+         * KANVAS VIDEO MIRRORED, LUKISAN DAKWAT & KONFETI
+         * ============================================================================
+         */
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function spawnConfetti() {
+            const colors = ["#facc15", "#4ade80", "#38bdf8", "#f472b6", "#fb923c"];
+            for (let i = 0; i < 90; i++) {
+                confettiParticles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 18,
+                    vy: (Math.random() - 0.7) * 18,
+                    size: Math.random() * 10 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 12
+                });
+            }
+        }
+
+        function drawConfetti() {
+            for (let i = confettiParticles.length - 1; i >= 0; i--) {
+                const p = confettiParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.45;
+                p.rotation += p.rotSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                ctx.restore();
+
+                if (p.y > canvas.height + 50) confettiParticles.splice(i, 1);
+            }
+        }
+
+        function onHandsResults(results) {
+            if (!isGameStarted) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Lukis kamera secara terbalik (mirrored)
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+
+            const videoRatio = results.image.width / results.image.height;
+            const canvasRatio = canvas.width / canvas.height;
+            let drawW = canvas.width;
+            let drawH = canvas.height;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (canvasRatio > videoRatio) {
+                drawH = canvas.width / videoRatio;
+                offsetY = (canvas.height - drawH) / 2;
+            } else {
+                drawW = canvas.height * videoRatio;
+                offsetX = (canvas.width - drawW) / 2;
+            }
+
+            ctx.drawImage(results.image, offsetX, offsetY, drawW, drawH);
+            ctx.restore();
+
+            ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Lukis garisan dakwat murid
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            strokes.forEach(stroke => {
+                if (stroke.points.length === 0) return;
+                ctx.strokeStyle = stroke.color;
+                ctx.fillStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.shadowColor = stroke.color;
+                ctx.shadowBlur = 12;
+
+                if (stroke.points.length === 1) {
+                    ctx.beginPath();
+                    ctx.arc(stroke.points[0].x, stroke.points[0].y, stroke.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                    for (let i = 1; i < stroke.points.length; i++) {
+                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                    }
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            });
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const gesture = detectHandGesture(landmarks);
+                updateGestureUI(gesture);
+
+                const rawX = (1 - landmarks[8].x) * drawW + offsetX;
+                const rawY = landmarks[8].y * drawH + offsetY;
+
+                if (smoothX === null || smoothY === null) {
+                    smoothX = rawX;
+                    smoothY = rawY;
+                } else {
+                    smoothX = smoothX + SMOOTHING_FACTOR * (rawX - smoothX);
+                    smoothY = smoothY + SMOOTHING_FACTOR * (rawY - smoothY);
+                }
+
+                checkVirtualButtonInteraction(smoothX, smoothY);
+
+                if (gesture === "WRITE" && !isStimulusPhase && !hoveredButton) {
+                    fistHoldStart = null;
+                    document.getElementById("fistProgressContainer").classList.add("hidden");
+
+                    if (!currentStroke) {
+                        currentStroke = {
+                            color: currentInkColor,
+                            width: Math.max(10, canvas.width * 0.011),
+                            points: [{ x: smoothX, y: smoothY }]
+                        };
+                        strokes.push(currentStroke);
+                    } else {
+                        currentStroke.points.push({ x: smoothX, y: smoothY });
+                    }
+                } else {
+                    currentStroke = null;
+                }
+
+                if (gesture === "FIST" && !isStimulusPhase) {
+                    const container = document.getElementById("fistProgressContainer");
+                    const bar = document.getElementById("fistProgressBar");
+                    container.classList.remove("hidden");
+
+                    if (!fistHoldStart) {
+                        fistHoldStart = Date.now();
+                    } else {
+                        const elapsed = Date.now() - fistHoldStart;
+                        const pct = Math.min(100, (elapsed / FIST_HOLD_DURATION) * 100);
+                        bar.style.width = `${pct}%`;
+
+                        if (elapsed >= FIST_HOLD_DURATION) {
+                            clearDrawingCanvas(true);
+                            fistHoldStart = null;
+                            container.classList.add("hidden");
+                            bar.style.width = "0%";
+                        }
+                    }
+                } else {
+                    fistHoldStart = null;
+                    document.getElementById("fistProgressContainer").classList.add("hidden");
+                }
+
+                ctx.beginPath();
+                ctx.arc(smoothX, smoothY, gesture === "WRITE" ? 12 : 16, 0, Math.PI * 2);
+                ctx.fillStyle = gesture === "WRITE" ? currentInkColor : "rgba(255, 255, 255, 0.85)";
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
+            } else {
+                currentStroke = null;
+                smoothX = null;
+                smoothY = null;
+                fistHoldStart = null;
+                document.getElementById("fistProgressContainer").classList.add("hidden");
+                updateGestureUI("NONE");
+            }
+
+            if (confettiParticles.length > 0) drawConfetti();
+        }
+
+        /**
+         * ============================================================================
+         * INISIALISASI SENARAI KAD GAMBAR SAHAJA & ACARA BUTANG
+         * ============================================================================
+         */
+        function populateWordListGrid() {
+            const grid = document.getElementById("wordGridContainer");
+            grid.innerHTML = "";
+
+            VOCABULARY_LIST.forEach((item, idx) => {
+                const card = document.createElement("button");
+                card.className = "bg-slate-800 hover:bg-purple-800/70 border-2 border-white/15 hover:border-amber-400 rounded-2xl p-2 flex flex-col items-center justify-center transition cursor-pointer";
+
+                const img = document.createElement("img");
+                img.src = item.imageUrl;
+                img.className = "w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-contain";
+
+                const numBadge = document.createElement("span");
+                numBadge.className = "mt-1 text-xs font-black text-amber-300";
+                numBadge.textContent = toArabicDigits(idx + 1);
+
+                card.appendChild(img);
+                card.appendChild(numBadge);
+
+                card.addEventListener("click", () => {
+                    playPopSound();
+                    document.getElementById("wordListModal").classList.add("hidden");
+                    loadQuestion(idx);
+                });
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById("backToHomeBtn").addEventListener("click", () => {
+            playPopSound();
+            returnToHomeScreen();
+        });
+
+        document.querySelectorAll('input[name="harakatChoice"]').forEach(radio => {
+            radio.addEventListener("change", (e) => {
+                useHarakat = e.target.value === "with";
+                document.getElementById("harakatLabel").textContent = useHarakat ? "التَّشْكِيلُ: نَعَمْ" : "التَّشْكِيلُ: لَا";
+            });
+        });
+
+        document.getElementById("toggleMusicBtn").addEventListener("click", () => {
+            toggleBackgroundMusic();
+        });
+
+        document.getElementById("toggleHarakatBtn").addEventListener("click", () => {
+            useHarakat = !useHarakat;
+            document.getElementById("harakatLabel").textContent = useHarakat ? "التَّشْكِيلُ: نَعَمْ" : "التَّشْكِيلُ: لَا";
+        });
+
+        document.querySelectorAll(".color-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                currentInkColor = btn.dataset.color;
+                document.querySelectorAll(".color-btn").forEach(b => {
+                    b.classList.remove("border-4", "border-white");
+                    b.classList.add("border-2", "border-white/50");
+                });
+                btn.classList.remove("border-2", "border-white/50");
+                btn.classList.add("border-4", "border-white");
+            });
+        });
+
+        document.getElementById("openWordListBtn").addEventListener("click", () => {
+            document.getElementById("wordListModal").classList.remove("hidden");
+        });
+
+        document.getElementById("closeWordListBtn").addEventListener("click", () => {
+            document.getElementById("wordListModal").classList.add("hidden");
+        });
+
+        document.getElementById("startWritingNowBtn").addEventListener("click", () => {
+            enterWritingPhase();
+        });
+
+        document.getElementById("clearCanvasBtn").addEventListener("click", () => {
+            clearDrawingCanvas(true);
+        });
+
+        document.getElementById("completeWordBtn").addEventListener("click", () => {
+            handleCompleteWord();
+        });
+
+        document.getElementById("nextQuestionModalBtn").addEventListener("click", () => {
+            playPopSound();
+            document.getElementById("celebrationModal").classList.add("hidden");
+            loadQuestion(currentIndex + 1);
+        });
+
+        // Mulakan MediaPipe Hands, Muzik Latar & Webcam
+        document.getElementById("launchGameBtn").addEventListener("click", async () => {
+            const statusMsg = document.getElementById("cameraStatusMsg");
+            const launchBtn = document.getElementById("launchGameBtn");
+
+            initAudio();
+            launchBtn.disabled = true;
+            launchBtn.innerHTML = "<span>⏳</span> <span>جَارِي تَشْغِيلُ الْكَامِيرَا...</span>";
+            statusMsg.textContent = "يُرْجَى الِانْتِظَارُ قَلِيلًا...";
+
+            try {
+                if (!cameraInstance) {
+                    const hands = new Hands({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                    });
+
+                    hands.setOptions({
+                        maxNumHands: 1,
+                        modelComplexity: 1,
+                        minDetectionConfidence: 0.65,
+                        minTrackingConfidence: 0.65
+                    });
+
+                    hands.onResults(onHandsResults);
+
+                    cameraInstance = new Camera(videoElement, {
+                        onFrame: async () => {
+                            if (isGameStarted) {
+                                await hands.send({ image: videoElement });
+                            }
+                        },
+                        width: 1280,
+                        height: 720
+                    });
+
+                    await cameraInstance.start();
+                }
+
+                isGameStarted = true;
+                if (isMusicPlaying) startBackgroundMusic();
+
+                document.getElementById("startScreenOverlay").classList.add("hidden");
+                populateWordListGrid();
+                loadQuestion(0);
+
+            } catch (err) {
+                console.error("Camera error:", err);
+                cameraInstance = null;
+                launchBtn.disabled = false;
+                launchBtn.innerHTML = "<span>🔄</span> <span>إِعَادَةُ الْمُحَاوَلَةِ</span>";
+                statusMsg.textContent = "❌ تَعَذَّرَ الْوُصُولُ إِلَى الْكَامِيرَا. يُرْجَى التَّأَكُّدُ مِنْ تَوْصِيلِهَا وَالسَّمَاحِ بِالْإِذْنِ.";
+                statusMsg.className = "text-xs text-rose-300 font-bold mt-3";
+            }
+        });
+    </script>
+</body>
+</html>
